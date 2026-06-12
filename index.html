@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lanteri GPS">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<title>Lanteri GPS Guidance</title>
+<style>
+  :root{
+    --bg:#000;--panel:#111;--line:#2b2b2b;--text:#fff;--muted:#aaa;--yellow:#ffd400;--green:#00b000;--red:#ff3333;
+    --btnH:clamp(58px,10vh,84px);--gap:clamp(6px,1.1vh,12px);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:Arial,Helvetica,sans-serif;touch-action:manipulation}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  #app{height:100dvh;width:100vw;display:grid;grid-template-rows:clamp(62px,10vh,86px) clamp(50px,8vh,70px) 1fr var(--btnH);gap:var(--gap);padding:8px 10px;background:#000;overflow:hidden}
+  .top{display:grid;grid-template-columns:1fr 1.45fr 1fr;gap:var(--gap)}
+  .panel{background:#111;border:2px solid #2a2a2a;border-radius:10px;min-width:0;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .label{font-weight:900;color:#aaa;text-transform:uppercase;line-height:1;font-size:clamp(13px,2.0vh,18px);text-shadow:0 1px 2px #000}
+  .value{font-weight:1000;line-height:.92;text-transform:uppercase;text-shadow:0 2px 2px #000}
+  .gpsStatus .value{font-size:clamp(28px,5vh,44px);color:var(--red)}
+  .speed .value{font-size:clamp(46px,8vh,74px);color:#fff}
+  .speed .unit{position:absolute;bottom:6px;font-weight:900;font-size:clamp(13px,2.2vh,18px);color:var(--yellow)}
+  .signalBox{position:absolute;right:8px;top:5px;display:flex;align-items:flex-end;gap:5px;height:28px;padding:4px;border:2px solid #444;border-radius:7px;background:#161616}
+  .bar{width:13px;border-radius:2px;background:#333}.bar:nth-child(1){height:8px}.bar:nth-child(2){height:14px}.bar:nth-child(3){height:20px}.bar:nth-child(4){height:26px}.bar.on{background:#7cff00}
+  .fixText{position:absolute;right:13px;bottom:4px;font-size:clamp(10px,1.6vh,14px);font-weight:1000;color:var(--red)}
+  .coverage{display:grid;grid-template-columns:repeat(13,1fr);align-items:center;gap:clamp(4px,.8vw,10px);padding:8px clamp(25px,12vw,150px)}
+  .led{aspect-ratio:1;border:4px solid #4a4a4a;border-radius:50%;background:#1a1a1a}.led.active{background:#fff;border-color:#fff;box-shadow:0 0 18px #fff}.led.warn{background:var(--yellow);border-color:var(--yellow)}
+  .main{display:grid;grid-template-columns:1fr 1.65fr 1fr;grid-template-rows:clamp(70px,15vh,115px) 1fr;gap:var(--gap);min-height:0}
+  .widthPanel{grid-column:1}.swathPanel{grid-column:3}.compassPanel{grid-column:2;grid-row:1/3;flex-direction:column;padding:4px 8px;justify-content:space-between}
+  .metric{flex-direction:column}.metric .value{font-size:clamp(32px,6vh,54px)}
+  .direction{font-size:clamp(30px,6.5vh,62px);letter-spacing:1px;color:#fff;text-align:center;margin-top:2px}
+  .arrowWrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;min-height:0;position:relative}
+  .arrow{width:0;height:0;border-left:clamp(36px,7.2vh,58px) solid transparent;border-right:clamp(36px,7.2vh,58px) solid transparent;border-bottom:clamp(84px,18vh,145px) solid #fff;filter:drop-shadow(0 0 20px #fff);transform:rotate(var(--rot,0deg));transform-origin:50% 62%;transition:.25s transform}
+  .statusText{font-size:clamp(34px,7.5vh,72px);font-weight:1000;line-height:.85;text-align:center;color:#fff;text-shadow:0 2px 2px #000;margin:2px 0}
+  .offset{font-size:clamp(32px,6vh,56px);font-weight:1000;color:var(--yellow);line-height:.9}
+  .smallGps{font-size:clamp(10px,1.5vh,14px);color:#999;font-weight:800;margin-bottom:2px}
+  .brandPanel{grid-column:1/2;grid-row:2;align-items:flex-end;justify-content:flex-start;padding:8px;border-color:#181818;background:#050505}
+  .brand{color:var(--yellow);font-weight:1000;text-align:center;line-height:.83;margin-left:10px;margin-bottom:2px;font-size:clamp(12px,2vh,18px)}
+  .brand .mark{font-size:clamp(60px,12vh,110px);font-weight:1000;letter-spacing:-8px;line-height:.65}.brand small{display:block;font-size:clamp(8px,1.4vh,12px);letter-spacing:1px}
+  .infoPanel{grid-column:3;grid-row:2;flex-direction:column;align-items:center;justify-content:center;background:#050505;border-color:#181818}.latlon{font-size:clamp(10px,1.8vh,15px);font-weight:800;color:#888;text-align:center;line-height:1.35}
+  .buttons{display:grid;grid-template-columns:1.55fr 1fr 1fr 1fr;gap:8px}.btn{border:0;border-radius:12px;font-weight:1000;font-size:clamp(22px,4.5vh,34px);color:#000;text-shadow:0 2px 1px rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);background:linear-gradient(#ffe960,#ffd300)}.btn.start{background:linear-gradient(#00ca00,#009b00);color:#fff;text-shadow:0 2px 2px #003900}.btn.menu{background:linear-gradient(#777,#333);color:#fff;text-shadow:0 2px 2px #000}
+  @media (max-height:620px){#app{grid-template-rows:56px 48px 1fr 58px;padding:5px 8px}.main{grid-template-rows:62px 1fr}.arrow{border-left-width:34px;border-right-width:34px;border-bottom-width:78px}.statusText{font-size:34px}.direction{font-size:32px}.brand .mark{font-size:58px}.btn{border-radius:10px}}
+  @media (orientation:portrait){#app:before{content:'Rotate to landscape';position:fixed;inset:0;background:#000;z-index:99;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:1000;color:#ffd400}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <div class="panel gpsStatus"><div><div class="label">GPS</div><div id="gpsState" class="value">OFF</div></div></div>
+    <div class="panel speed"><div id="speedVal" class="value">0</div><div class="unit">KM/H</div></div>
+    <div class="panel"><div class="signalBox"><i class="bar" id="b1"></i><i class="bar" id="b2"></i><i class="bar" id="b3"></i><i class="bar" id="b4"></i></div><div id="fixText" class="fixText">NO FIX</div></div>
+  </div>
+  <div class="panel coverage" id="coverage"></div>
+  <div class="main">
+    <div class="panel metric widthPanel"><div class="label">WIDTH</div><div id="widthVal" class="value">8.0m</div></div>
+    <div class="panel metric swathPanel"><div class="label">SWATH</div><div id="swathVal" class="value">0</div></div>
+    <div class="panel compassPanel">
+      <div id="direction" class="direction value">NO GPS</div>
+      <div class="arrowWrap"><div id="arrow" class="arrow"></div></div>
+      <div id="offset" class="offset">--</div>
+      <div id="moveState" class="statusText">STOPPED</div>
+      <div id="smallGps" class="smallGps">Lat/Lon: --</div>
+    </div>
+    <div class="panel brandPanel"><div class="brand"><div class="mark">LE</div><div>LANTERI</div><small>ENTERPRISES</small><small>ESTABLISHED 2014</small></div></div>
+    <div class="panel infoPanel"><div class="latlon" id="detail">Waiting for GPS<br>Use Safari HTTPS or add to Home Screen</div></div>
+  </div>
+  <div class="buttons"><button class="btn start" id="startBtn">START GPS</button><button class="btn" id="setA">SET A</button><button class="btn" id="setB">SET B</button><button class="btn menu" id="menuBtn">MENU</button></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);let watch=null,wake=null,last=null,A=null,B=null,width=8,heading=0;
+const cov=$('coverage');for(let i=0;i<13;i++){const d=document.createElement('div');d.className='led';cov.appendChild(d)}
+function setSignal(acc){let n=0;if(acc<8)n=4;else if(acc<15)n=3;else if(acc<30)n=2;else if(acc<80)n=1;for(let i=1;i<=4;i++)$('b'+i).classList.toggle('on',i<=n);$('fixText').textContent=n?'FIX':'NO FIX';$('fixText').style.color=n?'#7cff00':'#ff3333'}
+function dirFromDeg(d){const names=['NORTH','N/E','EAST','S/E','SOUTH','S/W','WEST','N/W'];return names[Math.round((((d%360)+360)%360)/45)%8]}
+function updateLED(offset){const leds=[...cov.children];leds.forEach(x=>x.className='led');let center=6;leds[center].classList.add('active'); if(isFinite(offset)){let pos=Math.max(0,Math.min(12,Math.round(center+offset/(width/2))));leds[pos].classList.add(Math.abs(pos-center)>2?'warn':'active')}}
+function distancePointToLine(p,a,b){if(!a||!b)return NaN;const R=6371000,toRad=x=>x*Math.PI/180;let lat0=toRad((a.lat+b.lat+p.lat)/3),x1=toRad(a.lon)*Math.cos(lat0)*R,y1=toRad(a.lat)*R,x2=toRad(b.lon)*Math.cos(lat0)*R,y2=toRad(b.lat)*R,x0=toRad(p.lon)*Math.cos(lat0)*R,y0=toRad(p.lat)*R;let dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1;return ((x0-x1)*dy-(y0-y1)*dx)/len}
+async function keepAwake(){try{if('wakeLock'in navigator)wake=await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&watch)keepAwake()});
+function startGPS(){if(!navigator.geolocation){alert('GPS not supported');return}$('gpsState').textContent='ON';$('gpsState').style.color='#00ff44';keepAwake();watch=navigator.geolocation.watchPosition(pos=>{let c=pos.coords,now=Date.now(),spd=Math.max(0,(c.speed||0)*3.6);if(last&&(!c.heading||c.heading<0)&&spd>1){let dy=c.latitude-last.lat,dx=(c.longitude-last.lon)*Math.cos(c.latitude*Math.PI/180);heading=(Math.atan2(dx,dy)*180/Math.PI+360)%360}else if(c.heading>=0)heading=c.heading;last={lat:c.latitude,lon:c.longitude,t:now};$('speedVal').textContent=Math.round(spd);$('direction').textContent=dirFromDeg(heading);$('arrow').style.setProperty('--rot',heading+'deg');$('moveState').textContent=spd>1?'MOVING':'STOPPED';$('smallGps').textContent=`Lat/Lon: ${c.latitude.toFixed(5)}, ${c.longitude.toFixed(5)}`;$('detail').innerHTML=`Accuracy: ${Math.round(c.accuracy)}m<br>Heading: ${Math.round(heading)}°<br>Speed: ${spd.toFixed(1)} km/h`;setSignal(c.accuracy);let off=distancePointToLine({lat:c.latitude,lon:c.longitude},A,B);$('offset').textContent=isFinite(off)?(off>0?'+':'')+off.toFixed(1)+'m':'--';$('swathVal').textContent=isFinite(off)?Math.round(off/width):'0';updateLED(off)},err=>{$('gpsState').textContent='OFF';$('gpsState').style.color='#ff3333';$('direction').textContent='NO GPS';$('detail').textContent=err.message;setSignal(999)},{enableHighAccuracy:true,maximumAge:1000,timeout:15000})}
+$('startBtn').onclick=startGPS;$('setA').onclick=()=>{if(last){A={lat:last.lat,lon:last.lon};alert('Point A set')}};$('setB').onclick=()=>{if(last){B={lat:last.lat,lon:last.lon};alert('Point B set')}};$('menuBtn').onclick=()=>{let v=prompt('Boom width in metres',width);if(v&&+v>0){width=+v;$('widthVal').textContent=width.toFixed(1)+'m'}};updateLED(NaN);
+</script>
+</body>
+</html>
